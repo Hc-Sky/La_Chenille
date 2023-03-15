@@ -31,8 +31,6 @@ void setup() {
   pinMode(10, OUTPUT);         // CS pin of SD Card Shield
   Servo_el.attach(5);
   Servo_az.attach(6);
-  Servo_el.write(90);
-
 
   if (!SD.begin(4))  {
     Serial.print("sd init failed");
@@ -45,51 +43,47 @@ void setup() {
 /*********************************************************************/
 void loop() {
   tourelle();
-  photo();
 }
 
 
 void tourelle(){
-  // First photo at 45 degrees
-  Servo_az.write(0);
+  //servo_el at 45 degrees
   Servo_el.write(45);
-  Serial.println("45");
   delay(1000);
 
-  // Second photo at 0 degrees
+  // First photo at 45 degrees
+  Servo_az.write(0);
+  Serial.println("45");
+  delay(1000);
+  photo();
+  delay(1000);
+
+  // Second photo at 90 degrees
   Servo_az.write(90);
   Serial.println("90");
+  delay(1000);
+  photo();
   delay(1000);
 
   // Third photo at 135 degrees
   Servo_az.write(135);
   Serial.println("135");
   delay(1000);
+  photo();
+  delay(1000);
 }
 void photo()
 {
   int n = 0;
-  while (1) {
-    Serial.println("\r\nPress the button to take a picture");
-    while (digitalRead(buttonPin) == LOW);      //wait for buttonPin status to HIGH
-    if (digitalRead(buttonPin) == HIGH) {
-      //delay(20);                               //Debounce
-      if (digitalRead(buttonPin) == HIGH)
-      {
         Serial.println("\r\nbegin to take picture");
         delay(200);
         if (n == 0) preCapture();
         Capture();
         GetData();
-
-      } while (digitalRead(buttonPin) == HIGH);
-
       Serial.print("\r\nTaking pictures success ,number : ");
       Serial.println(n);
       n++ ;
     }
-  }
-}
 /*********************************************************************/
 void clearRxBuf()
 {
@@ -101,7 +95,7 @@ void clearRxBuf()
 /*********************************************************************/
 void sendCmd(char cmd[], int cmd_len)
 {
-  for (char i = 0; i < cmd_len; i++) Serial.print(cmd[i]);
+  for (char i = 0; i < cmd_len; i++) Serial1.print(cmd[i]);
 }
 /*********************************************************************/
 void initialize()
