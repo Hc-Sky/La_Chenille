@@ -6,11 +6,11 @@ int MesureMaxi = 50; // Distance maxi a mesurer //
 int MesureMini = 7; // Distance mini a mesurer //
 int vitesse;
 long Duree;
-long Distance, preDistance;
+long Distance, preDistance, Dist, preDist;
 unsigned long tmes, tdebug, t1;
 int pwmPinB = 11, pwmPinA = 3, BrkPinB = 8, BrkPinA = 9, directionPinB = 13, directionPinA = 12;
 byte dir = 1, tour_mouv ;
-bool BrkA, BrkB, directionA, directionB, presence_obstacle, prise_photo = 0;
+bool BrkA, BrkB, directionA, directionB, presence_obstacle, prise_photo = 0, nb_dist = 0;
 float coeff;
 Servo Servo_el;
 Servo Servo_az;
@@ -54,24 +54,34 @@ void decodage_trame() {
 }
 void Vitesse() {
   if (Distance <= MesureMaxi && Distance >= MesureMini) {
-    coeff = map(constrain(Distance,30,40), 30, 40, 0.3, 1);
+    coeff = map(constrain(Distance, 30, 40), 30, 40, 0, 1);
   } else {
     coeff = 1;
   }
 }
 void detec_obstacle() {
+
+  // Debut de la mesure avec un signal de 10 µS applique sur TRIG //
+  digitalWrite(Broche_Trigger, LOW); // On efface l'etat logique de TRIG //
+  delayMicroseconds(2);
+  digitalWrite(Broche_Trigger, HIGH); // On met la broche TRIG a "1" pendant 10µS //
+  delayMicroseconds(10);
+  digitalWrite(Broche_Trigger, LOW); // On remet la broche TRIG a "0" //
+  // On mesure combien de temps le niveau logique haut est actif sur ECHO //
+  Duree = pulseIn(Broche_Echo, HIGH);
+  // Calcul de la distance grace au temps mesure //
+  Dist = Duree * 0.034 / 2; // *** voir explications apres l'exemple de code *** //
+  if (Dist == preDist){
+    nb_dist ++;
+    preDist = dist
+  }
+  if (nb_dist == 2){
+    Distance = dist;
+    nb_dist = 0;
+  }
+  
+  //Verif Debug de la distance dans le moniteur série toutes les 500 ms
   if (millis() - tmes > 500) {
-    // Debut de la mesure avec un signal de 10 µS applique sur TRIG //
-    digitalWrite(Broche_Trigger, LOW); // On efface l'etat logique de TRIG //
-    delayMicroseconds(2);
-    digitalWrite(Broche_Trigger, HIGH); // On met la broche TRIG a "1" pendant 10µS //
-    delayMicroseconds(10);
-    digitalWrite(Broche_Trigger, LOW); // On remet la broche TRIG a "0" //
-    // On mesure combien de temps le niveau logique haut est actif sur ECHO //
-    Duree = pulseIn(Broche_Echo, HIGH);
-    // Calcul de la distance grace au temps mesure //
-    Distance = Duree * 0.034 / 2; // *** voir explications apres l'exemple de code *** //
-    // Verification si valeur mesuree dans la plage //
     Serial.println(String(Distance));
     tmes = millis();
   }
@@ -81,7 +91,7 @@ void detec_obstacle() {
       Serial2.println("d" + String(Distance) + "/");
       preDistance = Distance;
     }
-    if (Distance <= 30 && !presence_obstacle) {
+    if (Distance <= 30 && presence_obstacle == 0) {
       presence_obstacle = 1;
       vitesse = 0;
       BrkA = 1;
