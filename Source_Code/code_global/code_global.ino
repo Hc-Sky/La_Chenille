@@ -10,7 +10,7 @@ long Distance, preDistance;
 unsigned long tmes, tdebug, t1;
 int pwmPinB = 11, pwmPinA = 3, BrkPinB = 8, BrkPinA = 9, directionPinB = 13, directionPinA = 12;
 byte dir = 1, tour_mouv ;
-bool BrkA, BrkB, directionA, directionB, presence_obstacle, prise_photo=0;
+bool BrkA, BrkB, directionA, directionB, presence_obstacle, prise_photo = 0;
 float coeff;
 Servo Servo_el;
 Servo Servo_az;
@@ -53,7 +53,11 @@ void decodage_trame() {
   Serial.println(String(vitesse) + String(dir));
 }
 void Vitesse() {
-  coeff = map(Distance, 15, 40, 0, 1);
+  if (Distance <= MesureMaxi && Distance >= MesureMini) {
+    coeff = map(constrain(Distance,30,40), 30, 40, 0.3, 1);
+  } else {
+    coeff = 1;
+  }
 }
 void detec_obstacle() {
   if (millis() - tmes > 500) {
@@ -77,7 +81,7 @@ void detec_obstacle() {
       Serial2.println("d" + String(Distance) + "/");
       preDistance = Distance;
     }
-    if (Distance <= 20 && !presence_obstacle) {
+    if (Distance <= 30 && !presence_obstacle) {
       presence_obstacle = 1;
       vitesse = 0;
       BrkA = 1;
@@ -89,11 +93,11 @@ void detec_obstacle() {
     Serial2.println("d-1/");
     preDistance = Distance;
   }
-  if (Distance > 20) {
+  if (Distance > 30) {
     presence_obstacle = 0;
     tour_mouv = 0;
   }
-  if (dir == 255 || presence_obstacle && tour_mouv < 3) {
+  if (dir == 255 || presence_obstacle && prise_photo == 0) {
     tourelle();
   }
 }
@@ -118,21 +122,28 @@ void commande_moteur() {
       directionA = 1;
       directionB = 0;
     }
-  } if (prise_photo = 1) {
+  } if (prise_photo == 1 && presence_obstacle) {
     BrkA = 0;
     BrkB = 0;
     directionA = 1;
     directionB = 0;
     vitesse = 255;
     delay(1000);
+    vitesse = 0;
     prise_photo = 0;
   }
   digitalWrite(BrkPinA, BrkA);
   digitalWrite(BrkPinB, BrkB);
   digitalWrite(directionPinA, directionA);
   digitalWrite(directionPinB, directionB);
-  analogWrite(pwmPinA, vitesse * coeff);
-  analogWrite(pwmPinB, vitesse * coeff);
+  if (coeff <= 1) {
+    analogWrite(pwmPinA, vitesse * coeff);
+    analogWrite(pwmPinB, vitesse * coeff);
+  } else {
+    analogWrite(pwmPinA, vitesse);
+    analogWrite(pwmPinB, vitesse);
+  }
+
   /*if (millis() - tdebug > 1000) {
     Serial.println("vitesse :" + String(vitesse));
     Serial.println("presence obstacle :" + String(presence_obstacle));
