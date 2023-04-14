@@ -1,30 +1,22 @@
-#include <SPI.h>
-#include <SD.h>
-#include <SoftwareSerial.h>
+void envoi.image() {
+  int x = 0;
+  while (1) {
+    File file = SD.open("pic0" + String(x) + ".jpg", FILE_READ);
+    if (file) {
+      Serial.println("file exist");
+      Serial2.print("image");
+      while (file.available()) {
+        byte data = file.read();
+        Serial.println("encore des donnée a envoyer");
+        Serial2.print(data);
+      }
+    }
+    Serial.println("Donner entièrement transmise");
+    file.close();
+    x++;
 
-const int chipSelect = 4;
-
-
-void setup() {
-  Serial.begin(9600);
-  Serial2.begin(19200);
-  SD.begin(chipSelect);
-
-}
-
-void loop() {
-  File file = SD.open("pic00.jpg", FILE_READ);
-
-  if (file) {
-    Serial.println("file exist");
-    Serial2.print("image");
-    while (file.available()) {
-      byte data = file.read();
-      Serial.println("encore des donnée a envoyer");
-      Serial2.print(data);
+    if (Serial2.readStringUntil('\n') == "ACK"){
+      break;
     }
   }
-  Serial.println("Donner entièrement transmise");
-  file.close();
-}
 }
